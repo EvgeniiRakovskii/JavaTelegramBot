@@ -1,12 +1,14 @@
 package rays.telegram.components;
 
-public class StockPrice {
+public class StockInfo {
 
     private float lastPrice;
     private float closePrice;
     private String tradeStatus;
     private String name;
     private float minPriceIncrement;
+    private String figi;
+
 
     public float getLastPrice() {
         return lastPrice;
@@ -33,15 +35,9 @@ public class StockPrice {
     }
 
     public float getPercentageChangeForDay() {
-        return (closePrice/lastPrice * 100);
-    }
+        float percentage = lastPrice/closePrice ;
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+        return (percentage - 1) * 100;
     }
 
     public float getMinPriceIncrement() {
@@ -52,12 +48,39 @@ public class StockPrice {
         this.minPriceIncrement = minPriceIncrement;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getFigi() {
+        return figi;
+    }
+
+    public void setFigi(String figi) {
+        this.figi = figi;
+    }
+
+    public void addInfo(StockInfo stockInfo){
+
+        this.lastPrice = stockInfo.getLastPrice();
+        this.closePrice = stockInfo.getClosePrice();
+        this.tradeStatus = stockInfo.getTradeStatus();
+
+    }
+
     @Override
     public String toString() {
-        return "StockPrice{" +
+        return "StockInfo{" +
                 "lastPrice=" + lastPrice +
                 ", closePrice=" + closePrice +
                 ", tradeStatus='" + tradeStatus + '\'' +
+                ", companyName='" + name + '\'' +
+                ", minPriceIncrement=" + minPriceIncrement +
+                ", figi='" + figi + '\'' +
                 '}';
     }
 }

@@ -2,25 +2,27 @@ package rays.telegram.bot;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
-import com.pengrad.telegrambot.model.CallbackQuery;
-import com.pengrad.telegrambot.model.InlineQuery;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.model.request.InlineQueryResultArticle;
-import com.pengrad.telegrambot.request.AnswerInlineQuery;
 import com.pengrad.telegrambot.request.BaseRequest;
 import com.pengrad.telegrambot.request.SendMessage;
-import rays.telegram.components.StockPrice;
+import rays.telegram.components.StockInfo;
+import rays.telegram.exceptions.AppException;
 import rays.telegram.services.StockService;
 
+/**
+ * Осталось добавить название компании
+ * Исправить отображение процента изменения + добавить знак
+ * Доработать ошибки, под каждую - свой Exception
+ */
+
 public class Bot {
-    //    "t.8vh3RRubYA1BMG9iy_W4emU2GRdauSzF_Qtxw6reY8FfwnHb5oiazDqVFG6Thxm12dzjEv-MQ07mp7qfjhwKog"
     // Create  bot passing the token received from @BotFather
     private final TelegramBot bot = new TelegramBot(System.getenv("BOT_TOKEN"));
 
     private final StockService stockService = new StockService();
 
-    public Bot(){
+    public Bot() {
     }
 
     public void serve() {
@@ -37,32 +39,31 @@ public class Bot {
     }
 
     private void process(Update update) {
-        Message message = update.message()==null? update.channelPost() : update.message();
-        CallbackQuery callbackQuery = update.callbackQuery();
-        InlineQuery inlineQuery = update.inlineQuery();
+        Message message = update.message() == null ? update.channelPost() : update.message();
         BaseRequest request = null;
 
-        if (inlineQuery!=null){
-            if("groolexx".equals(inlineQuery.from().username())){
-                request = new AnswerInlineQuery(inlineQuery.id(), new InlineQueryResultArticle("1", "Я пока ещё в разработке", "С тобой, Леха, я не разговариваю!"));
-            }
-            else {
-                request = new AnswerInlineQuery(inlineQuery.id(), new InlineQueryResultArticle("2", "Введи какой-нибудь тикет", "Вбей в чате @RaysJavaBot и интересующий тикет"));
-
-            }
-        }
-
-        if(message != null && message.text() != null){
+        if (message != null && message.text() != null) {
             long chatId = message.chat().id();
-            StockPrice stockPrice = stockService.getCurrentAndClosePriceForTinkoff(message.text().replace("/",""));
-            if(stockPrice!=null){
-                request = new SendMessage(chatId, stockPrice.getTradeStatus().equals("NotAvailableForTrading")?  String.format("Торги сейчас не ведутся, цена закрытия - %.2f",stockPrice.getClosePrice()):String.format("Текущая цена - %f, процент изменения за день - %f",stockPrice.getLastPrice(), stockPrice.getPercentageChangeForDay()));
-            }
-            else
-            request = new SendMessage(chatId, "Что-то пошло не так! Тикет не найден или Тинькофф не отвечает");
-        }
+       /*     if(message.from()!=null && ("groolexx".equals(message.from().username()) || "Alexey".equals(message.from().firstName()))){
+                request = new SendMessage(chatId, "Тебе ничего не скажу, вначале придумай чем на новый год заниматься будем, потом буду тебе тикеты отображать");
+            }else */
+            {
+                StockInfo stockInfo = null;
+                try {
+                    stockInfo = stockService.getInfoAboutStock(message.text().replace("/", ""));
+                    request = new SendMessage(chatId, stockInfo.getTradeStatus().equals("NotAvailableForTrading") ?
+                            String.format("Торги сейчас не ведутся %nЦена закрытия %s %.2f", stockInfo.getName(), stockInfo.getClosePrice()) :
+                            String.format("Текущая цена %s %.2f %nПроцент изменения за день %.2f", stockInfo.getName(), stockInfo.getLastPrice(),stockInfo.getPercentageChangeForDay()));
 
-        if(request!=null) {
+                } catch (AppException e) {
+                    request = new SendMessage(chatId, e.getLocalizedMessage());
+
+                }
+            }
+
+
+        }
+        if (request != null) {
             bot.execute(request);
         }
     }
