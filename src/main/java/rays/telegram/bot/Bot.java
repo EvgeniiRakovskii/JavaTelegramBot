@@ -4,7 +4,6 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.request.BaseRequest;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.json.JSONException;
 import rays.telegram.components.StockInfo;
@@ -47,21 +46,21 @@ public class Bot {
 
     private void process(Update update) {
         Message message = update.message() == null ? update.channelPost() : update.message();
-        BaseRequest request = null;
+        SendMessage sendMessage = null;
 
         if (message != null && message.text() != null) {
             String messageToBot = message.text().replace(System.getenv("BOT_NAME"),"");
             long chatId = message.chat().id();
             if (Constants.BOT_COMMANDS.containsKey(messageToBot.toLowerCase())){
-                request = new SendMessage(chatId, Constants.BOT_COMMANDS.get(messageToBot.toLowerCase()));
+                sendMessage = new SendMessage(chatId, Constants.BOT_COMMANDS.get(messageToBot.toLowerCase()));
             } else
             {
-                request = getMessageFromStock(chatId,messageToBot);
+                sendMessage = getMessageFromStock(chatId,messageToBot);
             }
         }
-        if (request != null) {
+        if (sendMessage != null) {
             logger.info("Запросили " + message.text());
-            bot.execute(request);
+            bot.execute(sendMessage);
         }
     }
 
